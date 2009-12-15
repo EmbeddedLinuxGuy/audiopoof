@@ -625,8 +625,8 @@ class testFrame(wx.Frame):
         if self.cb_audio.GetValue():
             self.gauge_audio.SetValue(int(event.value * 0.5))
             #print repr(event.value)
-            if(event.value > 100.0) :
-                print "over threshold!"
+            if(event.value > 200.0) :
+                print str(event.value) + " over threshold!"
             else:
                 print " "
             
