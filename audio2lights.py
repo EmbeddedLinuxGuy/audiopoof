@@ -382,8 +382,8 @@ class testFrame(wx.Frame):
                 self.ser.write("{%s <LT%s>}" % (theOrb,smoothval))
                 self.report("Smooth val set to " + smoothval)
 
-            self.ser.flushInput()
-            self.ser.flushOutput()
+            #self.ser.flushInput()
+            #self.ser.flushOutput()
 
 
     
@@ -624,32 +624,14 @@ class testFrame(wx.Frame):
         #if self.audioActive:
         if self.cb_audio.GetValue():
             self.gauge_audio.SetValue(int(event.value * 0.5))
-            self.graphicsPanel.drawBargraph(event.bands, height=200, width=20, pad=27)
-            outval = [0,0,0]
-            for oc in range(NUM_OUTCHANS):
-                if self.chancb[oc].GetValue():
-                    channelout = 0
-                    numbands = 0
-                    # get channel color from row ColourSelect
-                    cc = self.csel[oc].GetColour()
-                    # get as tuple
-                    ccolor = cc.Get()
-                    # sum power across spectral bands for this output.
-                    for i in range(len(event.bands)):
-
-                        channelout += event.bands[i] * self.spinmatrix[oc][i].GetValue()
-                        if event.bands[i] != 0:
-                            numbands += 1
-                    if numbands > 0:        # average by number of non-zero bands
-                        channelout /= numbands
-
-                    # add the contribution of this channel to this rgb color
-                    for c in range(3):
-                        outval[c] += channelout * ccolor[c] 
-            if self.cb_matrix.GetValue():
-                self.setOrbOutput(outval)
+            #print repr(event.value)
+            if(event.value > 100.0) :
+                print "over threshold!"
+            else:
+                print " "
+            
+            #self.graphicsPanel.drawBargraph(event.bands, height=200, width=20, pad=27)
         event.StopPropagation()   
-#        event.Skip()
 
     def InitSerial(self,comport,baudrate):
         try:

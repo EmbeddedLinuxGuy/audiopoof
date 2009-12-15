@@ -99,29 +99,31 @@ class AudioProc():
                 #sys.stdout.flush()
              ## use stdev to calculate energy in this buffer (root sum of squared mag)      
             #csum.append(buff.std())
-                fourier = fft(buff)
+                #fourier = fft(buff)
             ## calculate log mag of fft
-                logmag = hypot(fourier.real[0:chunk/2],fourier.imag[0:chunk/2])
+                #logmag = hypot(fourier.real[0:chunk/2],fourier.imag[0:chunk/2])
                 if False:
                     self.lmfile=open("logmag.txt","w")
                     logmag.tofile(self.lmfile, sep=" ", format="%s")
                     self.lmfile.close()
-                bdata = []
-                i = 0
-                for b in self.bands:
-                    # sum energy in this band
-                    bdata.append(logmag[b].mean()*self.scale[i])
-                    i += 1
+                #bdata = []
+                #i = 0
+                #for b in self.bands:
+                #    # sum energy in this band
+                #    bdata.append(logmag[b].mean()*self.scale[i])
+                #    i += 1
 
                     # normalize so max energy is 1.0
-                localmax = []
-                localmax.append(max(bdata))
-                localmax.append(self.bmax)
-                self.bmax = max(localmax)
-                for i in range(len(bdata)):
-                    bdata[i] = (bdata[i])*self.gain/self.bmax
+                #localmax = []
+                #localmax.append(max(bdata))
+                #localmax.append(self.bmax)
+                #self.bmax = max(localmax)
+                #for i in range(len(bdata)):
+                #    bdata[i] = (bdata[i])*self.gain/self.bmax
 
-                evt = self.UpdateAudioEvent(bands=bdata, value = int(localmax[0]*self.gain/50000))
+                #evt = self.UpdateAudioEvent(bands=bdata, value = int(localmax[0]*self.gain/50000))
+                bdata = range(len(self.bands))    
+                evt = self.UpdateAudioEvent(bands=bdata, value = buff.std())
                 #print localmax[0]
                 if True:
                     time.sleep(0.01)
