@@ -625,8 +625,10 @@ class testFrame(wx.Frame):
         if self.cb_audio.GetValue():
             self.gauge_audio.SetValue(int(event.value * 0.5))
             #print repr(event.value)
-            if(event.value > 200.0) :
+            if(event.value > 500.0) :
                 print str(event.value) + " over threshold!"
+                self.ser.write("!0111.")
+                self.ser.flushOutput()
             else:
                 print " "
             
@@ -741,7 +743,8 @@ if __name__ == "__main__":
 
 
 #    topFrame.InitSerial("COM6",115200)
-    topFrame.InitSerial("COM6",38400)
+#    topFrame.InitSerial("COM6",38400)
+    topFrame.InitSerial("COM6",19200)
     topFrame.audioActive = True
     topFrame.a = AudioProc.AudioProc(topFrame,10)
     testFrame.Bind(topFrame,topFrame.a.EVT_AUDIO, topFrame.onAudio)
