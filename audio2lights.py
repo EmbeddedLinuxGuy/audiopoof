@@ -642,7 +642,8 @@ class testFrame(wx.Frame):
             dlg = wx.SingleChoiceDialog(
                 self, "Can't open port "+comport+', Please select another.\n (Look in the Device Manager for available ports.\nIf no ports available, select "stdout" to test',
                 "Select a port",
-                ['COM1',
+                ['/dev/ttyUSB0',
+		 'COM1',
                  'COM2',
                  'COM3',
                  'COM4',
