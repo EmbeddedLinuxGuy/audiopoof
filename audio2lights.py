@@ -49,8 +49,6 @@ NUM_CHANNELS = 8                  # number of spectrographic channels
 NUM_OUTCHANS = 3                  # number of output channels
 
 
-
-
 class testFrame(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: testFrame.__init__
@@ -94,13 +92,6 @@ class testFrame(wx.Frame):
 
         self.gauge_audio = wx.Gauge(self, -1, 100, style=wx.GA_VERTICAL|wx.GA_SMOOTH)
         self.indicator = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
-
-        self.orb_cbs = []
-        for i in range(6):               # create orb enable checkboxen
-            cb = wx.CheckBox(self, OUTPUT_CB, "orb 6%d" %i)
-            cb.orbn = 60 + i
-            self.orb_cbs.append(cb)
-
 
         # this loop creates the SpinCntl matrix
         self.spinmatrix = []    # array of spincontrol rows
@@ -261,9 +252,6 @@ class testFrame(wx.Frame):
 
         # TOPLEVEL second row
         sizer_toplevel.Add((20, 20), 0, 0, 0)
-        for i in range(6):
-            sizer_orbcbs.Add(self.orb_cbs[i])
-        sizer_toplevel.Add(sizer_orbcbs, 1, wx.EXPAND, 0)
 #        sizer_toplevel.Add((20, 20), 0, 0, 0) # spacer instead of offs slider
         sizer_toplevel.Add(self.slider_offs, 0, wx.EXPAND, 0)
         sizer_toplevel.Add(self.slider_hue, 0, wx.EXPAND, 0)
@@ -332,27 +320,6 @@ class testFrame(wx.Frame):
 #                             theC[2])
         self.indicator.SetBackgroundColour(theColor)
         self.indicator.Refresh()
-
-    def setOrbOutput(self,theColor):
-        noOrbSelected = True
-        for n, cb in enumerate(self.orb_cbs):
-
-            if cb.GetValue():
-                noOrbSelected = False
-                # convert to hue and add offset for each orb
-                theHSV = colorsys.rgb_to_hsv(theColor[0],theColor[1],theColor[2])
-                newhue = theHSV[0] + n*self.slider_offs.GetValue()/200.0
-                while(newhue > 1.0):
-                    newhue -= 1.0
-                outColor = list(colorsys.hsv_to_rgb(newhue,theHSV[1],theHSV[2]))
-
-                # orb-sepcific preamble
-                theOrb= "%d " % (n + 60)
-                self.setOutput(theOrb,outColor)
-                self.ser.write("}")
-        if (noOrbSelected):              # else... no orb checkboxes set
-            self.setOutput("60",theColor)
-
 
     def setOutput(self,theOrb,theColor):
         """output array of 0-1 floats as color, converting to byte range"""
@@ -625,12 +592,13 @@ class testFrame(wx.Frame):
         if self.cb_audio.GetValue():
             self.gauge_audio.SetValue(int(event.value * 0.5))
             #print repr(event.value)
-            if(event.value > 500.0) :
-                print str(event.value) + " over threshold!"
-                self.ser.write("!0111.")
+            if(event.value > 500.0):
+                print str(event.value) + " poofer " + str(self.poofer)
+                self.poofer += 1
+                if (self.poofer > 8):
+                    self.poofer = 1
+                self.ser.write("!01" + str(self.poofer) + "1.")
                 self.ser.flushOutput()
-            else:
-                print " "
             
             #self.graphicsPanel.drawBargraph(event.bands, height=200, width=20, pad=27)
         event.StopPropagation()   
@@ -743,13 +711,13 @@ if __name__ == "__main__":
     LightEngine.SetTopWindow(topFrame)
 
 
-#    topFrame.InitSerial("COM6",115200)
-#    topFrame.InitSerial("COM6",38400)
+# XXX Default to /dev/ttyUSB0 for Linux, COM6 for Windows
     topFrame.InitSerial("COM6",19200)
     topFrame.audioActive = True
     topFrame.a = AudioProc.AudioProc(topFrame,10)
     testFrame.Bind(topFrame,topFrame.a.EVT_AUDIO, topFrame.onAudio)
     topFrame.gt = makegamma(0.5)
+    topFrame.poofer = 1
     topFrame.a.Start()
     
     if os.path.exists(startupfn):

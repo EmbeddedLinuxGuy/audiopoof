@@ -1,0 +1,35 @@
+Out to the serial port then on to the RS-485 network, the format is:
+
+!XXYZ.
+
+!    = start of new settings
+XX = two digits giving the box number, starting at 1, in hexadecimal
+    (example: 01, 02, .. 09, 0a, 0b, ... , 0f, 10, ......)
+Y = digit specifying what to change (1,2,.... = poofer solenoid)
+Z = what to do; 1 = turn on, 0 = turn off
+.  = end of message
+
+You can include a newline at the end for readability. If you don't, the message is 6 characters long.
+
+Each has a timer, and repeated "on" messages must be sent or the circuit turns off. This is for both igniters and poofers at the moment.
+
+I haven't screwed with the timeouts yet but I think we said half a second.
+
+It's 19200 baud, N, 8, 1.
+
+
+I'll give some examples just to be overly clear:
+
+Turn on box one, outlet one.
+!0111.
+
+Turn off, outlet three on box one.
+!0130.
+
+Turn on box ten outlet four (which is igniter one)
+!0A41.
+
+Turn off box seventeen outlet 2
+!1120.
+
+(Information courtesy of David Ellsworth).
