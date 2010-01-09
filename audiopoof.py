@@ -306,10 +306,11 @@ class testFrame(wx.Frame):
 
 
     def trigPoofer(self,thePoofer):
-        commandStr = "!01" + str(thePoofer) + "1."
-        self.report(commandStr)
+        commandStr = str(thePoofer) + "1."
+        #self.report(commandStr)
         if self.cb_serial.GetValue():
-            self.ser.write(commandStr)
+            self.ser.write("!01" + commandStr)
+            self.ser.write("!02" + commandStr)
             self.ser.flushOutput()
 
 
@@ -398,7 +399,7 @@ class testFrame(wx.Frame):
         if self.cb_sequence.GetValue():
             with open('sequence.txt', 'r') as f:
                 self.sequence = f.readlines()
-            self.timer.Start(1000)
+            self.timer.Start(500)
         else:
             self.timer.Stop()
 
@@ -570,9 +571,9 @@ class testFrame(wx.Frame):
     def onAudio(self,event):
         #if self.audioActive:
         if self.cb_audio.GetValue():
-            self.gauge_audio.SetValue(int(event.value * 0.5))
+            self.gauge_audio.SetValue(int(event.value * 0.05))
             #print repr(event.value)
-            if(event.value > 500.0):
+            if(event.value > self.slider_thresh.GetValue() * 50):
                 print str(event.value) + " poofer " + str(self.poofer)
                 self.poofer += 1
                 if (self.poofer > 8):
