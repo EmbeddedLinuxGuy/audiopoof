@@ -140,8 +140,7 @@ class testFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.onCloseWindow)
 
         self.Bind(wx.EVT_CHECKBOX, self.onCheckBox, id=AUDIO_CB)
-        self.Bind(wx.EVT_CHECKBOX, self.onCheckBox, id=MATRIX_CB)
-        self.Bind(wx.EVT_CHECKBOX, self.onCheckBox, id=SEQUENCE_CB)
+        self.Bind(wx.EVT_CHECKBOX, self.onCheckBox, id=SERIAL_CB)
 
         # end wxGlade
 
@@ -297,6 +296,7 @@ class testFrame(wx.Frame):
         self.lb1 = wx.ListBox(self, 60, (100, 50), (90, 120), self.sampleList,
                               wx.LB_SINGLE)
         self.lb1.SetSelection(0)
+        self.loadSequence()
         self.Bind(wx.EVT_LISTBOX, self.EvtListBox, self.lb1)
 
         sizer_toplevel.Add(self.lb1, 0, wx.EXPAND, 0)
@@ -326,7 +326,7 @@ class testFrame(wx.Frame):
         if self.cb_serial.GetValue():
             self.ser.write("!01" + commandStr)
             self.ser.write("!02" + commandStr)
-            self.ser.flushOutput()
+            #self.ser.flushOutput()
 
 
     def goodbye(self):
@@ -399,8 +399,11 @@ class testFrame(wx.Frame):
         cb = event.GetEventObject()
         if cb.GetId() == AUDIO_CB:
             self.doAudioCB()
-        if cb.GetId() == SEQUENCE_CB:
-            self.doSequenceCB()
+        if cb.GetId() == SERIAL_CB:
+            if self.cb_serial.GetValue():
+                self.timer.Start(500)
+            else:
+                self.timer.Stop()
             
     def doAudioCB(self):
         if self.cb_audio.GetValue():
@@ -416,21 +419,17 @@ class testFrame(wx.Frame):
             self.sequence = f.readlines()
         self.seq_i = 0
 
-    def doSequenceCB(self):
-        if self.cb_sequence.GetValue():
-            self.loadSequence()
-            self.timer.Start(500)
-        else:
-            self.timer.Stop()
-
     def doPoof(self):
         for i in range(8):
             if self.sequence[self.seq_i][i] == '1':
                 self.trigPoofer(i+1)
-        self.seq_i = (self.seq_i+1) % len(self.sequence)
 
     def OnTimer(self, event):
         self.doPoof()
+        #print "Poof"
+        if self.cb_sequence.GetValue():
+            self.seq_i = (self.seq_i+1) % len(self.sequence)
+            #print " Change (timer)"
 
     def onScroll(self, event): # wxGlade: testFrame.<event_handler>
         slider = event.GetEventObject()
@@ -597,8 +596,10 @@ class testFrame(wx.Frame):
             self.gauge_audio.SetValue(int(event.value * 0.05))
             #print repr(event.value)
             if(event.value > self.slider_thresh.GetValue() * 50):
+                self.seq_i = (self.seq_i+1) % len(self.sequence)
                 self.doPoof()
-            
+                #print " Change (audio)"
+
             #self.graphicsPanel.drawBargraph(event.bands, height=200, width=20, pad=27)
         event.StopPropagation()   
 
