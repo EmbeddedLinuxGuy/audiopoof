@@ -190,7 +190,9 @@ class testFrame(wx.Frame):
         self.slider_mbright.SetValue(valDict['mbright'])
         self.slider_msmooth.SetValue(valDict['msmooth'])
         self.slider_hue.SetValue(valDict['hue'])
-        self.slider_thresh.SetValue(valDict['offs'])
+        # We initialize to 50 so don't change
+        # XXX: Get rid of unused controls and fix presets
+        #self.slider_thresh.SetValue(valDict['offs'])
         self.report("Parameters updated")        
 
 
@@ -213,7 +215,7 @@ class testFrame(wx.Frame):
     def __do_layout(self):
         # begin wxGlade: testFrame.__do_layout1
 
-        sizer_toplevel = wx.FlexGridSizer(4, 8, 0, 4) # rows, columns
+        sizer_toplevel = wx.FlexGridSizer(4, 8, 0, 4) # rows, cols, vgap, hgap
         sizer_presets = wx.StaticBoxSizer(self.sizer_presets_staticbox, wx.HORIZONTAL)
         sizer_modecbs = wx.GridSizer(5, 1, 0, 0)
         sizer_orbcbs = wx.GridSizer(6, 1, 0, 0)
@@ -289,6 +291,13 @@ class testFrame(wx.Frame):
         sizer_toplevel.Add((20, 20), 0, 0, 0)
         sizer_toplevel.Add((20, 20), 0, 0, 0)
         sizer_toplevel.Add((20, 20), 0, 0, 0)
+
+        self.sampleList = os.listdir('seq')
+        self.lb1 = wx.ListBox(self, 60, (100, 50), (90, 120), self.sampleList,
+                              wx.LB_SINGLE)
+        self.lb1.SetSelection(0)
+        sizer_toplevel.Add(self.lb1, 0, wx.EXPAND, 0)
+
         self.SetSizer(sizer_toplevel)
         self.Layout()
         # end wxGlade
@@ -397,17 +406,21 @@ class testFrame(wx.Frame):
 
     def doSequenceCB(self):
         if self.cb_sequence.GetValue():
-            with open('sequence.txt', 'r') as f:
+            filename = 'seq/' + self.sampleList[self.lb1.GetSelection()]
+            with open(filename, 'r') as f:
                 self.sequence = f.readlines()
             self.timer.Start(500)
         else:
             self.timer.Stop()
 
-    def OnTimer(self, evt):
+    def doPoof(self):
         for i in range(8):
             if self.sequence[self.seq_i][i] == '1':
                 self.trigPoofer(i+1)
         self.seq_i = (self.seq_i+1) % len(self.sequence)
+
+    def OnTimer(self, evt):
+        self.doPoof()
 
     def onScroll(self, event): # wxGlade: testFrame.<event_handler>
         slider = event.GetEventObject()
@@ -574,11 +587,7 @@ class testFrame(wx.Frame):
             self.gauge_audio.SetValue(int(event.value * 0.05))
             #print repr(event.value)
             if(event.value > self.slider_thresh.GetValue() * 50):
-                print str(event.value) + " poofer " + str(self.poofer)
-                self.poofer += 1
-                if (self.poofer > 8):
-                    self.poofer = 1
-                self.trigPoofer(self.poofer)
+                self.doPoof()
             
             #self.graphicsPanel.drawBargraph(event.bands, height=200, width=20, pad=27)
         event.StopPropagation()   
@@ -691,8 +700,7 @@ if __name__ == "__main__":
     topFrame.a = AudioProc.AudioProc(topFrame,10)
     testFrame.Bind(topFrame,topFrame.a.EVT_AUDIO, topFrame.onAudio)
     topFrame.gt = makegamma(0.5)
-    topFrame.poofer = 1
-    topFrame.sequence = []
+    topFrame.sequence = [ "00000000" ]
     topFrame.seq_i = 0
     topFrame.Bind(wx.EVT_TIMER, topFrame.OnTimer)
     topFrame.timer = wx.Timer(topFrame)
