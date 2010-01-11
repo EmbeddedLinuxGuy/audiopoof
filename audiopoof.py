@@ -80,7 +80,7 @@ class testFrame(wx.Frame):
         self.label_msmooth = wx.StaticText(self, -1, "master\nsmooth")
         self.label_mbright = wx.StaticText(self, -1, "master\nbright")
         self.slider_hue = wx.Slider(self, SLIDER_HUE, 0, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
-        self.slider_thresh = wx.Slider(self, SLIDER_THRESH, 0, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
+        self.slider_thresh = wx.Slider(self, SLIDER_THRESH, 50, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
         self.slider_setgain = wx.Slider(self, SLIDER_SETGAIN, 50, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
         self.graphicsPanel = TestPanel.TestPanel(self, -1)
         self.slider_msmooth = wx.Slider(self, SLIDER_MSMOOTH, 50, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
