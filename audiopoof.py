@@ -293,14 +293,20 @@ class testFrame(wx.Frame):
         sizer_toplevel.Add((20, 20), 0, 0, 0)
 
         self.sampleList = os.listdir('seq')
+        self.sampleList.remove('.svn')
         self.lb1 = wx.ListBox(self, 60, (100, 50), (90, 120), self.sampleList,
                               wx.LB_SINGLE)
         self.lb1.SetSelection(0)
+        self.Bind(wx.EVT_LISTBOX, self.EvtListBox, self.lb1)
+
         sizer_toplevel.Add(self.lb1, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_toplevel)
         self.Layout()
         # end wxGlade
+
+    def EvtListBox(self, event):
+        self.loadSequence()
 
     def setIndicator(self,theC):
         #map colors through gamma table
@@ -404,11 +410,15 @@ class testFrame(wx.Frame):
             self.report("Audio input paused")
             self.a.Stop()
 
+    def loadSequence(self):
+        filename = 'seq/' + self.sampleList[self.lb1.GetSelection()]
+        with open(filename, 'r') as f:
+            self.sequence = f.readlines()
+        self.seq_i = 0
+
     def doSequenceCB(self):
         if self.cb_sequence.GetValue():
-            filename = 'seq/' + self.sampleList[self.lb1.GetSelection()]
-            with open(filename, 'r') as f:
-                self.sequence = f.readlines()
+            self.loadSequence()
             self.timer.Start(500)
         else:
             self.timer.Stop()
@@ -419,7 +429,7 @@ class testFrame(wx.Frame):
                 self.trigPoofer(i+1)
         self.seq_i = (self.seq_i+1) % len(self.sequence)
 
-    def OnTimer(self, evt):
+    def OnTimer(self, event):
         self.doPoof()
 
     def onScroll(self, event): # wxGlade: testFrame.<event_handler>
