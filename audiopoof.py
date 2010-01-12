@@ -50,6 +50,9 @@ class testFrame(wx.Frame):
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
         
+        self.sequence = [ "0000000000000000" ]
+        self.seq_i = 0
+
         # Menu Bar
         self.menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -64,6 +67,7 @@ class testFrame(wx.Frame):
         self.menubar.Append(wxglade_tmp_menu, "Help")
         self.SetMenuBar(self.menubar)
         # Menu Bar end
+
         self.statusbar = self.CreateStatusBar(1, 0)
         self.slider_thresh = wx.Slider(self, SLIDER_THRESH, 50, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
 #        self.graphicsPanel = TestPanel.TestPanel(self, -1)
@@ -80,6 +84,7 @@ class testFrame(wx.Frame):
         # this loop creates the  list of poofer buttons
         self.pooferbtnmatrix = []    # array of NUM_OUTCHANS*NUM_CHANNELS butns
         for chan in range(NUM_OUTCHANS*NUM_CHANNELS): 
+            chan += 1
             sc = wx.Button(self, -1, "%d" % chan)
             self.Bind(wx.EVT_BUTTON, self.onPooferBtn, sc)
             sc.chan = chan
@@ -158,6 +163,11 @@ class testFrame(wx.Frame):
         sizer_modecbs.Add(self.cb_sequence, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         # listbox
+        self.viewer = wx.ListBox(self, 120, (100, 50), (180, 120),
+                                 self.sequence,
+                                 wx.LB_SINGLE)
+        self.viewer.SetSelection(self.seq_i)
+
         self.sampleList = os.listdir('seq')
         self.sampleList.remove('.svn')
         self.lb1 = wx.ListBox(self, 60, (100, 50), (90, 120), self.sampleList,
@@ -171,29 +181,46 @@ class testFrame(wx.Frame):
         for btn in self.pooferbtnmatrix:
             sizer_matrix.Add(btn)
 
-        sizer_toplevel = wx.FlexGridSizer(1, 6, 0, 4) # rows, cols, vgap, hgap
+        all_button = wx.Button(self, -1, "ALL")
+        self.Bind(wx.EVT_BUTTON, self.onAllButton, all_button)
+
+        sizer_toplevel = wx.FlexGridSizer(1, 8, 0, 4) # rows, cols, vgap, hgap
+
         # TOPLEVEL first row
+
         sizer_toplevel.Add(self.slider_thresh, 0, wx.EXPAND, 0)
         sizer_toplevel.Add(self.gauge_audio, 0, wx.ALL|wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_modelabels, 1, wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_modecbs, 1, wx.ALL|wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_matrix, 1, 0, 0)
         sizer_toplevel.Add(self.lb1, 0, wx.EXPAND, 0)
+        sizer_toplevel.Add(all_button, 0, wx.ALL, 0)
+        sizer_toplevel.Add(self.viewer, 0, wx.ALL, 0)
+
         self.SetSizer(sizer_toplevel)
         self.Layout()
         # end wxGlade
+
+    def onAllButton(self, event):
+        self.report("ALL!")
+        for i in range(16):
+            self.trigPoofer(i+1)
 
     def EvtListBox(self, event):
         self.loadSequence()
 
     def trigPoofer(self,thePoofer):
-        commandStr = str(thePoofer) + "1."
+        theBoard = 1+int((thePoofer-1)/8)
+        if (thePoofer > 8):
+            thePoofer -= 8
+        commandStr = "!0" + str(theBoard) + str(thePoofer) + "1."
         #self.report(commandStr)
         if self.cb_serial.GetValue():
-            self.ser.write("!01" + commandStr)
-            self.ser.write("!02" + commandStr)
-            #self.ser.flushOutput()
-
+            self.ser.write(commandStr)
+            if self.ser != sys.stdout:
+                self.ser.flushOutput()
+            else:
+                self.ser.flush()
 
     def goodbye(self):
         self.report("really quitting now")
@@ -266,9 +293,12 @@ class testFrame(wx.Frame):
         if cb.GetId() == AUDIO_CB:
             self.doAudioCB()
         if cb.GetId() == SERIAL_CB:
+            self.report("SERIAL")
             if self.cb_serial.GetValue():
+                self.report("START")
                 self.timer.Start(500)
             else:
+                self.report("STOP")
                 self.timer.Stop()
             
     def doAudioCB(self):
@@ -283,18 +313,28 @@ class testFrame(wx.Frame):
         filename = 'seq/' + self.sampleList[self.lb1.GetSelection()]
         with open(filename, 'r') as f:
             self.sequence = f.readlines()
+        self.viewer.SetItems(self.sequence)
         self.seq_i = 0
+        self.viewer.SetSelection(self.seq_i)
 
     def doPoof(self):
-        for i in range(8):
+        pattern = ""
+        if (len(self.sequence[self.seq_i]) < 16):
+            self.report ("Skipping [" + self.sequence[self.seq_i] + "]")
+            return
+        for i in range(16):
+            pattern += str(self.sequence[self.seq_i][i])
+            #self.report(str(self.sequence[self.seq_i][i]) + " " + str(i))
             if self.sequence[self.seq_i][i] == '1':
                 self.trigPoofer(i+1)
+        self.report(pattern)
 
     def OnTimer(self, event):
         self.doPoof()
         #print "Poof"
         if self.cb_sequence.GetValue():
             self.seq_i = (self.seq_i+1) % len(self.sequence)
+            self.viewer.SetSelection(self.seq_i)
             #print " Change (timer)"
 
     def doMenu(self, event):
@@ -314,11 +354,7 @@ class testFrame(wx.Frame):
         event.Skip
 
     def report(self,str):
-        print str
-        sys.stdout.flush()
         self.statusbar.SetStatusText(str)
-
-        # print to status bar and/or stderr
 
     def saveSettings(self,fn,valDict):
         try:
@@ -373,7 +409,7 @@ class testFrame(wx.Frame):
     # turns poofer button for given channel red. 
     def flashPooferBtn(self, chan): 
         self.clearPooferBtns()
-        self.pooferbtnmatrix[chan].SetBackgroundColour(wx.Colour(255, 0, 0)) 
+        self.pooferbtnmatrix[chan-1].SetBackgroundColour(wx.Colour(255, 0, 0)) 
 
     # set all poofer buttons to default color
     def clearPooferBtns(self): 
@@ -392,6 +428,7 @@ class testFrame(wx.Frame):
             #print repr(event.value)
             if(event.value > self.slider_thresh.GetValue() * 50):
                 self.seq_i = (self.seq_i+1) % len(self.sequence)
+                self.viewer.SetSelection(self.seq_i)
                 self.doPoof()
                 #print " Change (audio)"
 
@@ -504,8 +541,6 @@ if __name__ == "__main__":
     topFrame.a = AudioProc.AudioProc(topFrame,10)
     testFrame.Bind(topFrame,topFrame.a.EVT_AUDIO, topFrame.onAudio)
     topFrame.gt = makegamma(0.5)
-    topFrame.sequence = [ "00000000" ]
-    topFrame.seq_i = 0
     topFrame.Bind(wx.EVT_TIMER, topFrame.OnTimer)
     topFrame.timer = wx.Timer(topFrame)
     topFrame.a.Start()
