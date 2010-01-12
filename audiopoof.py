@@ -34,7 +34,6 @@ RESET_MENU = 55
 AUDIO_MENU = 56
 
 AUDIO_CB = 71
-OUTPUT_CB = 72
 SERIAL_CB = 73
 SEQUENCE_CB = 74
 
@@ -71,11 +70,9 @@ class testFrame(wx.Frame):
         self.statusbar = self.CreateStatusBar(1, 0)
         self.slider_thresh = wx.Slider(self, SLIDER_THRESH, 50, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
 #        self.graphicsPanel = TestPanel.TestPanel(self, -1)
-        self.label_outputCB = wx.StaticText(self, -1, "Output")
         self.label_audio_cb = wx.StaticText(self, -1, "Audio")
-        self.label_serial_cb = wx.StaticText(self, -1, "Serial")
-        self.label_sequence_cb = wx.StaticText(self, -1, "Sequence")
-        self.cb_output = wx.CheckBox(self, OUTPUT_CB, "")
+        self.label_serial_cb = wx.StaticText(self, -1, "Run")
+        self.label_sequence_cb = wx.StaticText(self, -1, "Step")
         self.cb_audio = wx.CheckBox(self, AUDIO_CB, "")
         self.cb_serial = wx.CheckBox(self, SERIAL_CB, "")
         self.cb_sequence = wx.CheckBox(self, SEQUENCE_CB, "")
@@ -127,7 +124,6 @@ class testFrame(wx.Frame):
             return
 
             
-        self.cb_output.SetValue(valDict['output'])
         # We initialize to 50 so don't change
         # XXX: Get rid of unused controls and fix presets
         #self.slider_thresh.SetValue(valDict['offs'])
@@ -137,7 +133,6 @@ class testFrame(wx.Frame):
     def getValues(self,valDict):
 
 
-        valDict['output'] = self.cb_output.GetValue()
         valDict['offs'] = self.slider_thresh.GetValue()
 
 
@@ -151,13 +146,11 @@ class testFrame(wx.Frame):
         sizer_modelabels = wx.GridSizer(5, 1, 0, 0)
 
         # Checkbox labels
-        sizer_modelabels.Add(self.label_outputCB, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modelabels.Add(self.label_audio_cb, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modelabels.Add(self.label_serial_cb, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modelabels.Add(self.label_sequence_cb, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
 
         # Checkboxes
-        sizer_modecbs.Add(self.cb_output, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modecbs.Add(self.cb_audio, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modecbs.Add(self.cb_serial, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modecbs.Add(self.cb_sequence, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -181,9 +174,18 @@ class testFrame(wx.Frame):
         for btn in self.pooferbtnmatrix:
             sizer_matrix.Add(btn)
 
-        all_button = wx.Button(self, -1, "ALL")
+        all_button = wx.Button(self, -1, "All")
+        inner_button = wx.Button(self, -1, "Inner")
+        outer_button = wx.Button(self, -1, "Outer")
         self.Bind(wx.EVT_BUTTON, self.onAllButton, all_button)
+        self.Bind(wx.EVT_BUTTON, self.onInnerButton, inner_button)
+        self.Bind(wx.EVT_BUTTON, self.onOuterButton, outer_button)
 
+        sizer_buttons = wx.GridSizer(3, 1, 10, 0)
+        sizer_buttons.Add(all_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_buttons.Add(inner_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_buttons.Add(outer_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        
         sizer_toplevel = wx.FlexGridSizer(1, 8, 0, 4) # rows, cols, vgap, hgap
 
         # TOPLEVEL first row
@@ -194,7 +196,7 @@ class testFrame(wx.Frame):
         sizer_toplevel.Add(sizer_modecbs, 1, wx.ALL|wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_matrix, 1, 0, 0)
         sizer_toplevel.Add(self.lb1, 0, wx.EXPAND, 0)
-        sizer_toplevel.Add(all_button, 0, wx.ALL, 0)
+        sizer_toplevel.Add(sizer_buttons, 0, wx.ALL, 0)
         sizer_toplevel.Add(self.viewer, 0, wx.ALL, 0)
 
         self.SetSizer(sizer_toplevel)
@@ -205,6 +207,14 @@ class testFrame(wx.Frame):
         self.report("ALL!")
         for i in range(16):
             self.trigPoofer(i+1)
+
+    def onOuterButton(self, event):
+        for i in [ 5, 6, 7, 8, 16, 15, 14, 13 ]:
+            self.trigPoofer(i)
+
+    def onInnerButton(self, event):
+        for i in [ 1, 2, 3, 4, 12, 11, 10, 9 ]:
+            self.trigPoofer(i)
 
     def EvtListBox(self, event):
         self.loadSequence()
@@ -474,7 +484,6 @@ class testFrame(wx.Frame):
         initVals = {}
         # checkboxes
 
-        initVals['output'] = True
         initVals['audio'] = True
 
         initVals['setgain'] = 50
