@@ -21,14 +21,8 @@ import AudioProc
 
 
 # 
-SLIDER_HUE = 91
 SLIDER_THRESH = 92
-SLIDER_SETGAIN = 93
-SLIDER_MSMOOTH = 94
-SLIDER_MBRIGHT = 95
 
-
-PRESET_INDEX = 200              # for preset buttons
 POOFER_INDEX = 300              # for poofer buttons
 
 EXIT_MENU = 50
@@ -39,7 +33,6 @@ FILE_MENU = 54
 RESET_MENU = 55
 AUDIO_MENU = 56
 
-MATRIX_CB = 70
 AUDIO_CB = 71
 OUTPUT_CB = 72
 SERIAL_CB = 73
@@ -47,7 +40,6 @@ SEQUENCE_CB = 74
 
 # global constants
 
-NUM_PRESETS = 7
 NUM_CHANNELS = 4                  # number of spectrographic channels
 NUM_OUTCHANS = 4                  # number of output channels
 
@@ -57,7 +49,6 @@ class testFrame(wx.Frame):
         # begin wxGlade: testFrame.__init__
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
-        self.sizer_presets_staticbox = wx.StaticBox(self, -1, "presets")
         
         # Menu Bar
         self.menubar = wx.MenuBar()
@@ -74,32 +65,18 @@ class testFrame(wx.Frame):
         self.SetMenuBar(self.menubar)
         # Menu Bar end
         self.statusbar = self.CreateStatusBar(1, 0)
-        self.label_hue = wx.StaticText(self, -1, "\nunused", style=wx.ALIGN_CENTRE)
-        self.label_thresh = wx.StaticText(self, -1, "Audio\n thresh", style=wx.ALIGN_CENTRE)
-        self.label_setgain = wx.StaticText(self, -1, "Audio\ngain", style=wx.ALIGN_CENTRE)
-        self.label_msmooth = wx.StaticText(self, -1, "master\nsmooth")
-        self.label_mbright = wx.StaticText(self, -1, "master\nbright")
-        self.slider_hue = wx.Slider(self, SLIDER_HUE, 0, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
         self.slider_thresh = wx.Slider(self, SLIDER_THRESH, 50, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
-        self.slider_setgain = wx.Slider(self, SLIDER_SETGAIN, 50, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
-        self.graphicsPanel = TestPanel.TestPanel(self, -1)
-        self.slider_msmooth = wx.Slider(self, SLIDER_MSMOOTH, 50, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
-        self.slider_mbright = wx.Slider(self, SLIDER_MBRIGHT, 50, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
-        self.label_mode = wx.StaticText(self, -1, "mode", style=wx.ALIGN_CENTRE)
+#        self.graphicsPanel = TestPanel.TestPanel(self, -1)
         self.label_outputCB = wx.StaticText(self, -1, "Output")
-        self.label_matrixcb = wx.StaticText(self, -1, "Matrix")
         self.label_audio_cb = wx.StaticText(self, -1, "Audio")
         self.label_serial_cb = wx.StaticText(self, -1, "Serial")
         self.label_sequence_cb = wx.StaticText(self, -1, "Sequence")
         self.cb_output = wx.CheckBox(self, OUTPUT_CB, "")
-        self.cb_matrix = wx.CheckBox(self, MATRIX_CB, "")
         self.cb_audio = wx.CheckBox(self, AUDIO_CB, "")
         self.cb_serial = wx.CheckBox(self, SERIAL_CB, "")
         self.cb_sequence = wx.CheckBox(self, SEQUENCE_CB, "")
 
         self.gauge_audio = wx.Gauge(self, -1, 100, style=wx.GA_VERTICAL|wx.GA_SMOOTH)
-        self.indicator = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
-
         # this loop creates the  list of poofer buttons
         self.pooferbtnmatrix = []    # array of NUM_OUTCHANS*NUM_CHANNELS butns
         for chan in range(NUM_OUTCHANS*NUM_CHANNELS): 
@@ -112,31 +89,12 @@ class testFrame(wx.Frame):
 
         self.defaultBtnColour = sc.GetBackgroundColour()
 
-        self.label_audioin = wx.StaticText(self, -1, "Audio\n  In")
-
-
-        # this loop creates the row of preset buttons
-        self.preset_buttons = []
-        for i in range(NUM_PRESETS):
-            self.preset_buttons.append(wx.Button(self, PRESET_INDEX + i, "preset %d" % i))
-            self.preset_buttons[i].SetMinSize((50, -1))
-            self.preset_buttons[i].presetN = i
-            self.Bind(wx.EVT_BUTTON, self.doPresetBtn, self.preset_buttons[i])
-        self.store_preset = wx.Button(self, PRESET_INDEX + NUM_PRESETS, "STORE")
-        self.Bind(wx.EVT_BUTTON, self.doStorePresetBtn, self.store_preset)
-        self.store_preset.presetN = NUM_PRESETS
-
         self.__set_properties()
         self.__do_layout()
 
 
  
         self.Bind(wx.EVT_MENU, self.doMenu)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_HUE)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_THRESH)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_SETGAIN)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_MSMOOTH)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_MBRIGHT)
         self.Bind(wx.EVT_CLOSE, self.onCloseWindow)
 
         self.Bind(wx.EVT_CHECKBOX, self.onCheckBox, id=AUDIO_CB)
@@ -154,28 +112,10 @@ class testFrame(wx.Frame):
         self.SetBackgroundColour(wx.Colour(236, 233, 216))
         self.statusbar.SetStatusWidths([-1])
 
-        self.label_hue.SetFont(wx.Font(8, wx.DEFAULT, wx.NORMAL, wx.BOLD, 0, ""))
-        self.label_thresh.SetFont(wx.Font(8, wx.DEFAULT, wx.NORMAL, wx.BOLD, 0, ""))
-        self.label_setgain.SetFont(wx.Font(8, wx.DEFAULT, wx.NORMAL, wx.BOLD, 0, ""))
-        self.label_msmooth.SetFont(wx.Font(8, wx.DEFAULT, wx.NORMAL, wx.BOLD, 0, ""))
-        self.label_mbright.SetFont(wx.Font(8, wx.DEFAULT, wx.NORMAL, wx.BOLD, 0, ""))
-        self.slider_hue.SetMinSize((-1, -1))
-        self.slider_hue.SetBackgroundColour(wx.Colour(236, 233, 216))
         self.slider_thresh.SetMinSize((-1, -1))
         self.slider_thresh.SetBackgroundColour(wx.Colour(236, 233, 216))
-        self.slider_setgain.SetMinSize((-1, -1))
-        self.slider_setgain.SetBackgroundColour(wx.Colour(236, 233, 216))
-        self.graphicsPanel.SetMinSize((450,200))
-        self.graphicsPanel.SetBackgroundColour(wx.Colour(221, 221, 221))
-        self.slider_msmooth.SetMinSize((-1, -1))
-        self.slider_msmooth.SetBackgroundColour(wx.Colour(236, 233, 216))
-        self.slider_msmooth.oldval = "-1" # check this val to see if slider has changed
-        self.slider_mbright.SetMinSize((-1, -1))
-        self.slider_mbright.SetBackgroundColour(wx.Colour(236, 233, 216))
-        self.label_mode.SetFont(wx.Font(8, wx.DEFAULT, wx.NORMAL, wx.BOLD, 0, ""))
-        self.indicator.SetBackgroundColour(wx.Colour(0, 0, 0))
-        self.store_preset.SetMinSize((50, -1))
-        self.store_preset.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD, 0, ""))
+#        self.graphicsPanel.SetMinSize((450,200))
+#        self.graphicsPanel.SetBackgroundColour(wx.Colour(221, 221, 221))
 
     def setValues(self,valDict):
         if len(valDict) < 2:
@@ -183,12 +123,6 @@ class testFrame(wx.Frame):
 
             
         self.cb_output.SetValue(valDict['output'])
-        self.cb_matrix.SetValue(valDict['matrix'])
-        self.slider_setgain.SetValue(valDict['setgain'])
-        self.doSetgain()
-        self.slider_mbright.SetValue(valDict['mbright'])
-        self.slider_msmooth.SetValue(valDict['msmooth'])
-        self.slider_hue.SetValue(valDict['hue'])
         # We initialize to 50 so don't change
         # XXX: Get rid of unused controls and fix presets
         #self.slider_thresh.SetValue(valDict['offs'])
@@ -199,13 +133,6 @@ class testFrame(wx.Frame):
 
 
         valDict['output'] = self.cb_output.GetValue()
-        valDict['matrix'] = self.cb_matrix.GetValue()
-
-        valDict['setgain'] = self.slider_setgain.GetValue()
-        valDict['mbright'] = self.slider_mbright.GetValue()
-        valDict['msmooth'] = self.slider_msmooth.GetValue()
-
-        valDict['hue'] = self.slider_hue.GetValue()
         valDict['offs'] = self.slider_thresh.GetValue()
 
 
@@ -214,83 +141,23 @@ class testFrame(wx.Frame):
     def __do_layout(self):
         # begin wxGlade: testFrame.__do_layout1
 
-        sizer_toplevel = wx.FlexGridSizer(4, 8, 0, 4) # rows, cols, vgap, hgap
-        sizer_presets = wx.StaticBoxSizer(self.sizer_presets_staticbox, wx.HORIZONTAL)
         sizer_modecbs = wx.GridSizer(5, 1, 0, 0)
         sizer_orbcbs = wx.GridSizer(6, 1, 0, 0)
         sizer_modelabels = wx.GridSizer(5, 1, 0, 0)
-        sizer_indicator = wx.BoxSizer(wx.VERTICAL)
 
-        # TOPLEVEL first row
-        sizer_toplevel.Add((2, 2), 0, 0, 0)
-#        sizer_toplevel.Add((2, 2), 0, 0, 0)
-        sizer_toplevel.Add(self.label_thresh, 0, wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, 0)
-        sizer_toplevel.Add(self.label_hue, 0, wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, 0)
-        sizer_toplevel.Add(self.label_setgain, 0, wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, 0)
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-        sizer_toplevel.Add(self.label_msmooth, 0, wx.LEFT|wx.TOP|wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, 4)
-        sizer_toplevel.Add(self.label_mbright, 0, wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, 3)
-
-        sizer_toplevel.Add((2, 2), 0, 0, 0)
-
-        # TOPLEVEL second row
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-#        sizer_toplevel.Add((20, 20), 0, 0, 0) # spacer instead of offs slider
-        sizer_toplevel.Add(self.slider_thresh, 0, wx.EXPAND, 0)
-        sizer_toplevel.Add(self.slider_hue, 0, wx.EXPAND, 0)
-        sizer_toplevel.Add(self.slider_setgain, 0, wx.EXPAND, 0)
-        sizer_toplevel.Add(self.graphicsPanel, 0, 0, 0)
-        sizer_toplevel.Add(self.slider_msmooth, 0, wx.EXPAND, 0)
-        sizer_toplevel.Add(self.slider_mbright, 0, wx.EXPAND, 0)
-
-        # TOPLEVEL third row
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-        sizer_modelabels.Add((20, 20), 0, 0, 0)
-        sizer_modelabels.Add(self.label_mode, 0, wx.ALIGN_RIGHT, 0)
+        # Checkbox labels
         sizer_modelabels.Add(self.label_outputCB, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_modelabels.Add(self.label_matrixcb, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modelabels.Add(self.label_audio_cb, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modelabels.Add(self.label_serial_cb, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modelabels.Add(self.label_sequence_cb, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_toplevel.Add(sizer_modelabels, 1, wx.EXPAND, 0)
-        sizer_modecbs.Add((20, 20), 0, 0, 0)
-        sizer_modecbs.Add((20, 20), 0, 0, 0)
+
+        # Checkboxes
         sizer_modecbs.Add(self.cb_output, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_modecbs.Add(self.cb_matrix, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modecbs.Add(self.cb_audio, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modecbs.Add(self.cb_serial, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modecbs.Add(self.cb_sequence, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_toplevel.Add(sizer_modecbs, 1, wx.ALL|wx.EXPAND, 0)
-        sizer_toplevel.Add(self.gauge_audio, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
 
-        # for each row in the output array
-        sizer_matrix = wx.GridSizer(NUM_OUTCHANS, NUM_CHANNELS, 5, 10)
-        for btn in self.pooferbtnmatrix:
-            sizer_matrix.Add(btn)
-                
-
-        sizer_toplevel.Add(sizer_matrix, 1, 0, 0)
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-        sizer_indicator.Add((21, 20), 0, 0, 0)
-        sizer_indicator.Add(self.indicator, 1, wx.EXPAND, 0)
-        sizer_indicator.Add((21, 20), 0, 0, 0)
-        sizer_toplevel.Add(sizer_indicator, 1, wx.EXPAND, 0)
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-        sizer_toplevel.Add(self.label_audioin, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
-
-        for i in range(7):
-            sizer_presets.Add(self.preset_buttons[i], 0, wx.ALL|wx.EXPAND, 3)
-
-        sizer_presets.Add(self.store_preset, 0, wx.EXPAND, 0)
-        sizer_toplevel.Add(sizer_presets, 1, wx.EXPAND, 0)
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-        sizer_toplevel.Add((20, 20), 0, 0, 0)
-
+        # listbox
         self.sampleList = os.listdir('seq')
         self.sampleList.remove('.svn')
         self.lb1 = wx.ListBox(self, 60, (100, 50), (90, 120), self.sampleList,
@@ -299,26 +166,25 @@ class testFrame(wx.Frame):
         self.loadSequence()
         self.Bind(wx.EVT_LISTBOX, self.EvtListBox, self.lb1)
 
-        sizer_toplevel.Add(self.lb1, 0, wx.EXPAND, 0)
+        # for each row in the output array
+        sizer_matrix = wx.GridSizer(NUM_OUTCHANS, NUM_CHANNELS, 5, 10)
+        for btn in self.pooferbtnmatrix:
+            sizer_matrix.Add(btn)
 
+        sizer_toplevel = wx.FlexGridSizer(1, 6, 0, 4) # rows, cols, vgap, hgap
+        # TOPLEVEL first row
+        sizer_toplevel.Add(self.slider_thresh, 0, wx.EXPAND, 0)
+        sizer_toplevel.Add(self.gauge_audio, 0, wx.ALL|wx.EXPAND, 0)
+        sizer_toplevel.Add(sizer_modelabels, 1, wx.EXPAND, 0)
+        sizer_toplevel.Add(sizer_modecbs, 1, wx.ALL|wx.EXPAND, 0)
+        sizer_toplevel.Add(sizer_matrix, 1, 0, 0)
+        sizer_toplevel.Add(self.lb1, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_toplevel)
         self.Layout()
         # end wxGlade
 
     def EvtListBox(self, event):
         self.loadSequence()
-
-    def setIndicator(self,theC):
-        #map colors through gamma table
-        theColor = wx.Colour(self.gt[theC[0]],
-                             self.gt[theC[1]],
-                             self.gt[theC[2]])
-#        theColor = wx.Colour(theC[0],
-#                             theC[1],
-#                             theC[2])
-        self.indicator.SetBackgroundColour(theColor)
-        self.indicator.Refresh()
-
 
     def trigPoofer(self,thePoofer):
         commandStr = str(thePoofer) + "1."
@@ -431,24 +297,6 @@ class testFrame(wx.Frame):
             self.seq_i = (self.seq_i+1) % len(self.sequence)
             #print " Change (timer)"
 
-    def onScroll(self, event): # wxGlade: testFrame.<event_handler>
-        slider = event.GetEventObject()
-        val = slider.GetValue()
-	if slider.GetId() == SLIDER_SETGAIN:
-           self.report("Audio gain set to " + str(val)) 
-           self.a.setgain(val)
-        elif slider.GetId() == SLIDER_MSMOOTH:
-            self.report("Fade time set to " + str(val))
-        elif slider.GetId() == SLIDER_MBRIGHT:
-            self.report("Gain set to " + str(val)) 
-#        event.Skip()
-
-    def doSetgain(self):
-        gain = self.slider_setgain.GetValue()
-        self.a.setgain(gain)
-        self.report("Audio input gain set to %d" % gain)
-
-
     def doMenu(self, event):
         ID = event.GetId() 
         if ID == EXIT_MENU:
@@ -472,13 +320,6 @@ class testFrame(wx.Frame):
 
         # print to status bar and/or stderr
 
-    def getPresetFileName(self,n):
-        presetfn = "preset%1d.pre" % n
-        return(presetfn)
-
-    def savePreset(self,n,valDict):
-        self.saveSettings(self.getPresetFileName(n),valDict)
-
     def saveSettings(self,fn,valDict):
         try:
             output = open(fn, 'wb')
@@ -495,21 +336,6 @@ class testFrame(wx.Frame):
         output.close()
         return
 
-    def loadPreset(self,n):
-        fn = self.getPresetFileName(n)
-        try:
-            input = open(fn, 'rb')
-        except IOError:
-            dlg = wx.MessageDialog(self, 'No data stored for preset %d!' % n,
-                                   'Alert',
-                                   wx.OK | wx.ICON_INFORMATION
-                                   )
-            dlg.ShowModal()
-            dlg.Destroy()
-            return({})
-        input.close()
-        return(self.loadSettings(fn))
-        
     def loadSettings(self,fn):
         try:
             input = open(fn, 'rb')
@@ -535,30 +361,6 @@ class testFrame(wx.Frame):
         input.close()
         return(valDict)
 
-    def doPresetBtn(self, event): # wxGlade: testFrame.<event_handler>
-        button = event.GetEventObject()
-        if self.storeFlag:
-            self.report("storing preset %d" % button.presetN)        
-            valDict = self.getValues({})
-            self.savePreset(button.presetN,valDict)
-        else:                   # load preset
-            self.report("loading preset %d" % button.presetN)
-            self.setValues(self.loadPreset(button.presetN))
-        self.storeFlag = 0
-        self.doColorStorePresetBtn(self.storeFlag)
-        #event.Skip()
-
-    def doStorePresetBtn(self, event): 
-        self.storeFlag = 1-self.storeFlag # toggle self.storeFlag between 1 and 0
-        if self.storeFlag:
-            self.report("select preset to store")
-        else:
-            self.report("store preset cancelled")
-        self.doColorStorePresetBtn(self.storeFlag)
-        #event.Skip()
-
-
-
     # event responder for poofer button
     # called when poofer buttons are pressed
     def onPooferBtn(self, event): 
@@ -578,13 +380,6 @@ class testFrame(wx.Frame):
         for button in self.pooferbtnmatrix:
             button.SetBackgroundColour(self.defaultBtnColour) 
 
-
-    # change the color on the store button to indicate storage mode
-    def doColorStorePresetBtn(self,state):
-        if(state):
-            self.store_preset.SetBackgroundColour(wx.Colour(148, 255, 153)) 
-        else:
-            self.store_preset.SetBackgroundColour(wx.Colour(236, 233, 216))
 
     def onSelectColour(self, event): # wxGlade: testFrame.<event_handler>
         self.report("New color selected")
@@ -644,13 +439,11 @@ class testFrame(wx.Frame):
 
         initVals['output'] = True
         initVals['audio'] = True
-        initVals['matrix'] = True
 
         initVals['setgain'] = 50
         initVals['msmooth'] = 40
         initVals['mbright'] = 75
 
-        initVals['hue'] = 0
         initVals['offs'] = 0
 
         for i in range(NUM_OUTCHANS):
