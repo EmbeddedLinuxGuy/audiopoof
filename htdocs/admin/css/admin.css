@@ -1,0 +1,129 @@
+li {
+	margin: 0;
+}
+strong {
+	font-weight: bold;
+}
+em {
+	font-style: italic;
+}
+input, textarea {outline-style:none;} /* turn off safari's highlight */
+a
+{
+  outline: none;
+}
+a {
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+#main {
+	padding: 2em;
+}
+#vispanel {
+	width: 300px;
+	height: 250px;
+	/* background: transparent url('../images/interface-scrn.png') 25px 25px no-repeat; */
+	border: 1px solid #cccccc;
+	float: left;
+}
+#vispanel ul {
+	width: 300px;
+	height: 250px;
+	position: relative;
+}
+#vispanel li {
+	height: 27px;
+	width: 25px;
+	position: absolute;
+	list-style-type: none;
+}
+#vispanel li a {
+	display: block;
+	background: transparent url('../images/button-multi.png') 0 0 no-repeat;
+	height: 27px;
+	width: 25px;
+	padding-top: 8px;
+	font-size: 77%;
+	color: #000000;
+}
+#vispanel li a:hover {
+	text-decoration: none;
+	background-position: 0px -43px;
+}
+#vispanel li a.active {
+	background-position: 0px -86px;
+}
+#vispanel li a.active:hover {
+	background-position: 0px -129px;
+}
+#vispanel #btn-1 {
+	top: 184px;
+	left: 146px;
+}
+#vispanel #btn-2 {
+	top: 146px;
+	left: 175px;
+}
+#vispanel #btn-3 {
+	top: 101px;
+	left: 172px;
+}
+#vispanel #btn-4 {
+	top: 61px;
+	left: 148px;
+}
+#vispanel #btn-5 {
+	top: 132px;
+	left: 224px;
+}
+#vispanel #btn-6 {
+	top: 89px;
+	left: 216px;
+}
+#vispanel #btn-7 {
+	top: 39px;
+	left: 193px;
+}
+#vispanel #btn-8 {
+	top: 12px;
+	left: 148px;
+}
+#vispanel #btn-9 {
+	top: 184px;
+	left: 76px;
+}
+#vispanel #btn-10 {
+	top: 146px;
+	left: 47px;
+}
+#vispanel #btn-11 {
+	top: 101px;
+	left: 51px;
+}
+#vispanel #btn-12 {
+	top: 61px;
+	left: 75px;
+}
+#vispanel #btn-13 {
+	top: 132px;
+	left: 0px;
+}
+#vispanel #btn-14 {
+	top: 89px;
+	left: 6px;
+}
+#vispanel #btn-15 {
+	top: 39px;
+	left: 30px;
+}
+#vispanel #btn-16 {
+	top: 12px;
+	left: 75px;
+}
+#ctlpanel {
+	float: left;
+	text-align: left;
+	margin-left: 50px;
+}
