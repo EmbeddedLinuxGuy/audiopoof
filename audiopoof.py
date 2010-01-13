@@ -63,7 +63,27 @@ class testFrame(wx.Frame):
             self.cross_list[i] = self.crossing
         self.interval = 500
         self.cross_cursor = 0
-        
+        self.Bind(wx.EVT_CHAR, self.onChar)
+
+        # c99 d100 e101 452 v118 f102 r114 553 b98 h104 y121 654 n110 j106 u117 755
+        self.keyMap = {
+            99 : 13,
+            100 : 14,
+            101 : 15,
+            52 : 16,
+            118 : 9,
+            102 : 10,
+            114 : 11,
+            53 : 12,
+            98 : 1,
+            104 : 2,
+            121 : 3,
+            54 : 4,
+            110 : 5,
+            106 : 6,
+            117 : 7,
+            55 : 8
+            }
         # Menu Bar
         self.menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -95,11 +115,24 @@ class testFrame(wx.Frame):
         self.gauge_audio = wx.Gauge(self, -1, 100, style=wx.GA_VERTICAL|wx.GA_SMOOTH)
         # this loop creates the  list of poofer buttons
         self.pooferbtnmatrix = []    # array of NUM_OUTCHANS*NUM_CHANNELS butns
+        keyNames = [
+                     "4", "5", "6", "7",
+                     "E", "R", "Y", "U",
+                     "D", "F", "H", "J",
+                     "C", "V", "B", "N"
+                     ]
+        self.keyChannel = [
+                       16, 12, 4, 8,
+                       15, 11, 3, 7,
+                       14, 10, 2, 6,
+                       13, 9, 1, 5
+                        ]
+          
         for chan in range(NUM_OUTCHANS*NUM_CHANNELS): 
-            chan += 1
-            sc = wx.Button(self, -1, "%d" % chan)
+            sc = wx.Button(self, -1, keyNames[chan])
+            #sc = wx.Button(self, -1, "%d" % chan)
             self.Bind(wx.EVT_BUTTON, self.onPooferBtn, sc)
-            sc.chan = chan
+            sc.chan = self.keyChannel[chan]
             sc.SetMinSize((60, -1))
             sc.SetFont(wx.Font(8, wx.DEFAULT, wx.NORMAL, wx.BOLD, 1, ""))
             self.pooferbtnmatrix.append(sc)
@@ -243,12 +276,22 @@ class testFrame(wx.Frame):
         self.Layout()
         # end wxGlade
 
+    def onChar(self, event):
+        keycode = event.GetKeyCode()
+        poofer = self.keyMap.get(keycode, None)
+        if (poofer == None):
+            return
+        #self.report(str(keycode))
+        self.trigPoofer(poofer)  # send serial command to tigger this poofer
+        self.flashPooferBtn(poofer) # make this button red
+
     def onScroll(self, event):
         slider = event.GetEventObject()
         val = slider.GetValue()
         if slider.GetId() == SLIDER_SPEED:
             self.interval = val
             self.timer.Stop()
+            #self.timer.Start(val, oneShot=True)
             self.timer.Start(val)
 
     def onReload(self, event):
@@ -396,7 +439,7 @@ class testFrame(wx.Frame):
             #self.report(str(self.sequence[self.seq_i][i]) + " " + str(i))
             if self.sequence[self.seq_i][i] == '1':
                 self.trigPoofer(i+1)
-        self.report(self.sequence[self.seq_i])
+        #self.report(self.sequence[self.seq_i])
 
     def OnTimer(self, event):
         self.doPoof()
@@ -405,7 +448,9 @@ class testFrame(wx.Frame):
             self.seq_i = (self.seq_i+self.delta) % len(self.sequence)
             self.viewer.SetSelection(self.seq_i)
             #print " Change (timer)"
-
+            # 
+            #self.timer.Start(self.lastLoudness, oneShot=True)
+            
     def doMenu(self, event):
         ID = event.GetId() 
         if ID == EXIT_MENU:
@@ -478,7 +523,7 @@ class testFrame(wx.Frame):
     # turns poofer button for given channel red. 
     def flashPooferBtn(self, chan): 
         self.clearPooferBtns()
-        self.pooferbtnmatrix[chan-1].SetBackgroundColour(wx.Colour(255, 0, 0)) 
+        self.pooferbtnmatrix[self.keyChannel.index(chan)].SetBackgroundColour(wx.Colour(255, 0, 0)) 
 
     # set all poofer buttons to default color
     def clearPooferBtns(self): 
@@ -494,6 +539,7 @@ class testFrame(wx.Frame):
         #if self.audioActive:
         if self.cb_audio.GetValue():
             loudness = math.log(event.value)
+            #self.lastLoudness = loudness
             self.gauge_audio.SetValue(int(event.value * 0.05))
             #print repr(event.value)
             if(10*loudness > self.slider_thresh.GetValue()):
