@@ -11,6 +11,8 @@ import os
 import serial
 import pickle
 import subprocess
+import time
+import math
 
 #for rgb2hsv
 import colorsys
@@ -21,6 +23,7 @@ import AudioProc
 
 
 # 
+SLIDER_SPEED = 91
 SLIDER_THRESH = 92
 
 POOFER_INDEX = 300              # for poofer buttons
@@ -51,6 +54,8 @@ class testFrame(wx.Frame):
         
         self.sequence = [ "0000000000000000" ]
         self.seq_i = 0
+        self.crossing = time.time()
+        self.interval = 500
 
         # Menu Bar
         self.menubar = wx.MenuBar()
@@ -68,7 +73,7 @@ class testFrame(wx.Frame):
         # Menu Bar end
 
         self.statusbar = self.CreateStatusBar(1, 0)
-        self.slider_thresh = wx.Slider(self, SLIDER_THRESH, 50, 0, 99, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
+        self.slider_thresh = wx.Slider(self, SLIDER_THRESH, 50, 1, 100, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
 #        self.graphicsPanel = TestPanel.TestPanel(self, -1)
         self.label_audio_cb = wx.StaticText(self, -1, "Audio")
         self.label_serial_cb = wx.StaticText(self, -1, "Run")
@@ -170,12 +175,11 @@ class testFrame(wx.Frame):
         self.Bind(wx.EVT_LISTBOX, self.EvtListBox, self.lb1)
 
         # for each row in the output array
-        sizer_matrix = wx.GridSizer(NUM_OUTCHANS+1, NUM_CHANNELS, 5, 10)
+        sizer_matrix = wx.GridSizer(NUM_OUTCHANS, NUM_CHANNELS, 5, 10)
         for btn in self.pooferbtnmatrix:
             sizer_matrix.Add(btn)
 
         next_button = wx.Button(self, -1, "Next")
-        sizer_matrix.Add(next_button)
         self.Bind(wx.EVT_BUTTON, self.onNextButton, next_button)
 
         all_button = wx.Button(self, -1, "All")
@@ -189,8 +193,17 @@ class testFrame(wx.Frame):
         sizer_buttons.Add(all_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_buttons.Add(inner_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_buttons.Add(outer_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        
-        sizer_toplevel = wx.FlexGridSizer(1, 8, 0, 4) # rows, cols, vgap, hgap
+
+        self.slider_speed = wx.Slider(self, SLIDER_SPEED, 500, 50, 500, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_SPEED)
+
+        reload_button = wx.Button(self, -1, "Reload")
+        self.Bind(wx.EVT_BUTTON, self.onReload, reload_button)
+
+
+        self.crossing_label = wx.StaticText(self, -1, "0")
+
+        sizer_toplevel = wx.FlexGridSizer(2, 9, 0, 4) # rows, cols, vgap, hgap
 
         # TOPLEVEL first row
 
@@ -198,15 +211,39 @@ class testFrame(wx.Frame):
         sizer_toplevel.Add(self.gauge_audio, 0, wx.ALL|wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_modelabels, 1, wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_modecbs, 1, wx.ALL|wx.EXPAND, 0)
+        sizer_toplevel.Add(self.slider_speed)
         sizer_toplevel.Add(sizer_matrix, 1, 0, 0)
         sizer_toplevel.Add(self.lb1, 0, wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_buttons, 0, wx.ALL, 0)
         sizer_toplevel.Add(self.viewer, 0, wx.ALL, 0)
 
+        # TOPLEVEL second row
+
+        sizer_toplevel.Add(self.crossing_label)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add(next_button)
+        sizer_toplevel.Add(reload_button)
+
         self.SetSizer(sizer_toplevel)
         self.Layout()
         # end wxGlade
 
+    def onScroll(self, event):
+        slider = event.GetEventObject()
+        val = slider.GetValue()
+        if slider.GetId() == SLIDER_SPEED:
+            self.interval = val
+            self.timer.Stop()
+            self.timer.Start(val)
+
+    def onReload(self, event):
+        self.sampleList = os.listdir('seq')
+        self.sampleList.remove('.svn')
+        self.lb1.SetItems(self.sampleList)
+        
     def onAllButton(self, event):
         self.report("ALL!")
         for i in range(16):
@@ -315,7 +352,7 @@ class testFrame(wx.Frame):
             self.report("SERIAL")
             if self.cb_serial.GetValue():
                 self.report("START")
-                self.timer.Start(500)
+                self.timer.Start(self.interval)
             else:
                 self.report("STOP")
                 self.timer.Stop()
@@ -441,9 +478,15 @@ class testFrame(wx.Frame):
     def onAudio(self,event):
         #if self.audioActive:
         if self.cb_audio.GetValue():
+            loudness = math.log(event.value)
             self.gauge_audio.SetValue(int(event.value * 0.05))
             #print repr(event.value)
-            if(event.value > self.slider_thresh.GetValue() * 50):
+            if(10*loudness > self.slider_thresh.GetValue()):
+                current = time.time()
+                elapsed = current - self.crossing
+                self.crossing = current
+                self.crossing_label.SetLabel(str(int(1000*elapsed)))
+
                 self.seq_i = (self.seq_i+1) % len(self.sequence)
                 self.viewer.SetSelection(self.seq_i)
                 self.doPoof()
