@@ -170,9 +170,13 @@ class testFrame(wx.Frame):
         self.Bind(wx.EVT_LISTBOX, self.EvtListBox, self.lb1)
 
         # for each row in the output array
-        sizer_matrix = wx.GridSizer(NUM_OUTCHANS, NUM_CHANNELS, 5, 10)
+        sizer_matrix = wx.GridSizer(NUM_OUTCHANS+1, NUM_CHANNELS, 5, 10)
         for btn in self.pooferbtnmatrix:
             sizer_matrix.Add(btn)
+
+        next_button = wx.Button(self, -1, "Next")
+        sizer_matrix.Add(next_button)
+        self.Bind(wx.EVT_BUTTON, self.onNextButton, next_button)
 
         all_button = wx.Button(self, -1, "All")
         inner_button = wx.Button(self, -1, "Inner")
@@ -215,6 +219,11 @@ class testFrame(wx.Frame):
     def onInnerButton(self, event):
         for i in [ 1, 2, 3, 4, 12, 11, 10, 9 ]:
             self.trigPoofer(i)
+
+    def onNextButton(self, event):
+        self.seq_i = (self.seq_i+1) % len(self.sequence)
+        self.viewer.SetSelection(self.seq_i)
+        self.doPoof()
 
     def EvtListBox(self, event):
         self.loadSequence()
@@ -328,16 +337,14 @@ class testFrame(wx.Frame):
         self.viewer.SetSelection(self.seq_i)
 
     def doPoof(self):
-        pattern = ""
         if (len(self.sequence[self.seq_i]) < 16):
             self.report ("Skipping [" + self.sequence[self.seq_i] + "]")
             return
         for i in range(16):
-            pattern += str(self.sequence[self.seq_i][i])
             #self.report(str(self.sequence[self.seq_i][i]) + " " + str(i))
             if self.sequence[self.seq_i][i] == '1':
                 self.trigPoofer(i+1)
-        self.report(pattern)
+        self.report(self.sequence[self.seq_i])
 
     def OnTimer(self, event):
         self.doPoof()
