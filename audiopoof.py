@@ -39,6 +39,7 @@ AUDIO_MENU = 56
 AUDIO_CB = 71
 SERIAL_CB = 73
 SEQUENCE_CB = 74
+REVERSE_CB = 75
 
 # global constants
 
@@ -54,9 +55,15 @@ class testFrame(wx.Frame):
         
         self.sequence = [ "0000000000000000" ]
         self.seq_i = 0
+        self.delta = 1
         self.crossing = time.time()
+        self.cross_list = [0,0,0,0,0]
+        for i in range(5):
+            # prepopulate with fake data??
+            self.cross_list[i] = self.crossing
         self.interval = 500
-
+        self.cross_cursor = 0
+        
         # Menu Bar
         self.menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -78,10 +85,13 @@ class testFrame(wx.Frame):
         self.label_audio_cb = wx.StaticText(self, -1, "Audio")
         self.label_serial_cb = wx.StaticText(self, -1, "Run")
         self.label_sequence_cb = wx.StaticText(self, -1, "Step")
+        self.label_reverse_cb = wx.StaticText(self, -1, "Reverse")
+        
         self.cb_audio = wx.CheckBox(self, AUDIO_CB, "")
         self.cb_serial = wx.CheckBox(self, SERIAL_CB, "")
         self.cb_sequence = wx.CheckBox(self, SEQUENCE_CB, "")
-
+        self.cb_reverse = wx.CheckBox(self, REVERSE_CB, "")
+        
         self.gauge_audio = wx.Gauge(self, -1, 100, style=wx.GA_VERTICAL|wx.GA_SMOOTH)
         # this loop creates the  list of poofer buttons
         self.pooferbtnmatrix = []    # array of NUM_OUTCHANS*NUM_CHANNELS butns
@@ -106,7 +116,8 @@ class testFrame(wx.Frame):
 
         self.Bind(wx.EVT_CHECKBOX, self.onCheckBox, id=AUDIO_CB)
         self.Bind(wx.EVT_CHECKBOX, self.onCheckBox, id=SERIAL_CB)
-
+        self.Bind(wx.EVT_CHECKBOX, self.onReverse, id=REVERSE_CB)
+        
         # end wxGlade
 
     def __set_properties(self):
@@ -154,12 +165,13 @@ class testFrame(wx.Frame):
         sizer_modelabels.Add(self.label_audio_cb, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modelabels.Add(self.label_serial_cb, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modelabels.Add(self.label_sequence_cb, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
-
+        sizer_modelabels.Add(self.label_reverse_cb, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         # Checkboxes
         sizer_modecbs.Add(self.cb_audio, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modecbs.Add(self.cb_serial, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_modecbs.Add(self.cb_sequence, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
+        sizer_modecbs.Add(self.cb_reverse, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        
         # listbox
         self.viewer = wx.ListBox(self, 120, (100, 50), (180, 120),
                                  self.sequence,
@@ -258,10 +270,13 @@ class testFrame(wx.Frame):
             self.trigPoofer(i)
 
     def onNextButton(self, event):
-        self.seq_i = (self.seq_i+1) % len(self.sequence)
+        self.seq_i = (self.seq_i+self.delta) % len(self.sequence)
         self.viewer.SetSelection(self.seq_i)
         self.doPoof()
 
+    def onReverse(self, event):
+        self.delta = -self.delta
+        
     def EvtListBox(self, event):
         self.loadSequence()
 
@@ -387,7 +402,7 @@ class testFrame(wx.Frame):
         self.doPoof()
         #print "Poof"
         if self.cb_sequence.GetValue():
-            self.seq_i = (self.seq_i+1) % len(self.sequence)
+            self.seq_i = (self.seq_i+self.delta) % len(self.sequence)
             self.viewer.SetSelection(self.seq_i)
             #print " Change (timer)"
 
@@ -484,10 +499,19 @@ class testFrame(wx.Frame):
             if(10*loudness > self.slider_thresh.GetValue()):
                 current = time.time()
                 elapsed = current - self.crossing
+                #if elapsed < .1:
+                #    return
+                
                 self.crossing = current
-                self.crossing_label.SetLabel(str(int(1000*elapsed)))
+#                self.crossing_label.SetLabel(str(int(1000*elapsed)) + " ms")
 
-                self.seq_i = (self.seq_i+1) % len(self.sequence)
+                long_elapsed = self.crossing - self.cross_list[self.cross_cursor]
+                ppm = len(self.cross_list) * 60 / long_elapsed
+                self.cross_list[self.cross_cursor] = self.crossing
+                self.cross_cursor = (1 + self.cross_cursor) % len(self.cross_list)
+                self.crossing_label.SetLabel(str(int(ppm)) + " ppm")
+
+                self.seq_i = (self.seq_i+self.delta) % len(self.sequence)
                 self.viewer.SetSelection(self.seq_i)
                 self.doPoof()
                 #print " Change (audio)"
@@ -594,8 +618,8 @@ if __name__ == "__main__":
     LightEngine.SetTopWindow(topFrame)
 
 
-# XXX Default to /dev/ttyUSB0 for Linux, COM6 for Windows
-    topFrame.InitSerial("COM6",19200)
+# XXX Default to /dev/ttyUSB0 for Linux, COM? for Windows
+    topFrame.InitSerial("COM7",19200)
     topFrame.audioActive = True
     topFrame.a = AudioProc.AudioProc(topFrame,10)
     testFrame.Bind(topFrame,topFrame.a.EVT_AUDIO, topFrame.onAudio)
