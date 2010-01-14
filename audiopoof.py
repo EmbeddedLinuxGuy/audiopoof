@@ -44,6 +44,7 @@ REVERSE_CB = 75
 FEATHER_CB = 100 # 100-115
 FEATHER_TIMER = 120 # 120-135
 MAIN_TIMER = 140
+HEARTBEAT = 141
 
 # global constants
 
@@ -88,6 +89,10 @@ class testFrame(wx.Frame):
             117 : 7,
             55 : 8
             }
+
+        self.heartBeat = wx.Timer(self, id=HEARTBEAT)
+        self.Bind(wx.EVT_TIMER, self.onHeartBeat, id=HEARTBEAT)
+
         # Menu Bar
         self.menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -157,7 +162,7 @@ class testFrame(wx.Frame):
         self.Bind(wx.EVT_CHECKBOX, self.onReverse, id=REVERSE_CB)
         
         # end wxGlade
-
+        
     def __set_properties(self):
 
         self.storeFlag = 0
@@ -309,7 +314,7 @@ class testFrame(wx.Frame):
         sizer_buttons.Add(inner_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_buttons.Add(outer_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.slider_speed = wx.Slider(self, SLIDER_SPEED, 500, 50, 1000, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
+        self.slider_speed = wx.Slider(self, SLIDER_SPEED, 500, 50, 3000, (0,0), (100, 300), style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE|wx.EXPAND)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_SPEED)
 
         reload_button = wx.Button(self, -1, "Reload")
@@ -326,7 +331,7 @@ class testFrame(wx.Frame):
         sizer_toplevel.Add(self.gauge_audio, 0, wx.ALL|wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_modelabels, 1, wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_modecbs, 1, wx.ALL|wx.EXPAND, 0)
-        sizer_toplevel.Add(self.slider_speed)
+        sizer_toplevel.Add(self.slider_speed, 0, wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_matrix, 1, 0, 0)
         sizer_toplevel.Add(self.lb1, 0, wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_buttons, 0, wx.ALL, 0)
@@ -372,6 +377,10 @@ class testFrame(wx.Frame):
             self.timer.Stop()
             #self.timer.Start(val, oneShot=True)
             self.timer.Start(val)
+            if val > 500:
+                self.heartBeat.Start(500)
+            else:
+                self.heartBeat.Stop()
 
     def onReload(self, event):
         self.sampleList = os.listdir('seq')
@@ -532,6 +541,9 @@ class testFrame(wx.Frame):
     def onPoofTimeout(self, event):
         ID = event.GetId() 
         self.cb_feathers[ID-FEATHER_TIMER].SetValue(False)
+
+    def onHeartBeat(self, event):
+        self.doPoof()
 
     def OnTimer(self, event):
         self.doPoof()
