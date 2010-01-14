@@ -314,7 +314,7 @@ class testFrame(wx.Frame):
         sizer_buttons.Add(inner_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_buttons.Add(outer_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.slider_speed = wx.Slider(self, SLIDER_SPEED, 500, 50, 3000, (0,0), (100, 300), style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE|wx.EXPAND)
+        self.slider_speed = wx.Slider(self, SLIDER_SPEED, 500, 50, 3000, (0,0), (100, 250), style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE|wx.EXPAND)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_SPEED)
 
         reload_button = wx.Button(self, -1, "Reload")
