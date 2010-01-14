@@ -41,6 +41,10 @@ SERIAL_CB = 73
 SEQUENCE_CB = 74
 REVERSE_CB = 75
 
+FEATHER_CB = 100 # 100-115
+FEATHER_TIMER = 120 # 120-135
+MAIN_TIMER = 140
+
 # global constants
 
 NUM_CHANNELS = 4                  # number of spectrographic channels
@@ -139,6 +143,7 @@ class testFrame(wx.Frame):
 
         self.defaultBtnColour = sc.GetBackgroundColour()
 
+        
         self.__set_properties()
         self.__do_layout()
 
@@ -188,6 +193,71 @@ class testFrame(wx.Frame):
         return(valDict)
 
     def __do_layout(self):
+
+        self.cb_feathers = []
+        self.timer_feathers = []
+        for i in range(16):
+            self.cb_feathers.append(wx.CheckBox(self, FEATHER_CB+i, ""))
+            self.timer_feathers.append(wx.Timer(self, FEATHER_TIMER+i))
+            self.Bind(wx.EVT_TIMER, self.onPoofTimeout, id=FEATHER_TIMER+i)
+
+        cb_grid = wx.GridSizer(5, 10, 5, 0)
+
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[15])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[7])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[14])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[11])
+        cb_grid.Add(self.cb_feathers[3])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[6])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[13])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[10])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[2])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[5])
+        cb_grid.Add((2,2), 0, 0, 0)
+
+        cb_grid.Add(self.cb_feathers[12])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[9])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[1])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[4])
+
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[8])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add(self.cb_feathers[0])
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+        cb_grid.Add((2,2), 0, 0, 0)
+
         # begin wxGlade: testFrame.__do_layout1
 
         sizer_modecbs = wx.GridSizer(5, 1, 0, 0)
@@ -239,7 +309,7 @@ class testFrame(wx.Frame):
         sizer_buttons.Add(inner_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_buttons.Add(outer_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.slider_speed = wx.Slider(self, SLIDER_SPEED, 500, 50, 500, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
+        self.slider_speed = wx.Slider(self, SLIDER_SPEED, 500, 50, 1000, style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_SPEED)
 
         reload_button = wx.Button(self, -1, "Reload")
@@ -271,6 +341,15 @@ class testFrame(wx.Frame):
         sizer_toplevel.Add((2,2), 0, 0, 0)
         sizer_toplevel.Add(next_button)
         sizer_toplevel.Add(reload_button)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add(cb_grid)
 
         self.SetSizer(sizer_toplevel)
         self.Layout()
@@ -323,12 +402,17 @@ class testFrame(wx.Frame):
     def EvtListBox(self, event):
         self.loadSequence()
 
+    # thePoofer: 1-16
     def trigPoofer(self,thePoofer):
+        self.cb_feathers[thePoofer-1].SetValue(True)
+        self.timer_feathers[thePoofer-1].Start(500)
+
         theBoard = 1+int((thePoofer-1)/8)
         if (thePoofer > 8):
             thePoofer -= 8
         commandStr = "!0" + str(theBoard) + str(thePoofer) + "1."
         #self.report(commandStr)
+        
         if self.cb_serial.GetValue():
             self.ser.write(commandStr)
             if self.ser != sys.stdout:
@@ -439,7 +523,15 @@ class testFrame(wx.Frame):
             #self.report(str(self.sequence[self.seq_i][i]) + " " + str(i))
             if self.sequence[self.seq_i][i] == '1':
                 self.trigPoofer(i+1)
+#            else:
+#                if step_size > 500:
+#                    self.extinguishPoofer(i+1)
+
         #self.report(self.sequence[self.seq_i])
+
+    def onPoofTimeout(self, event):
+        ID = event.GetId() 
+        self.cb_feathers[ID-FEATHER_TIMER].SetValue(False)
 
     def OnTimer(self, event):
         self.doPoof()
@@ -670,8 +762,8 @@ if __name__ == "__main__":
     topFrame.a = AudioProc.AudioProc(topFrame,10)
     testFrame.Bind(topFrame,topFrame.a.EVT_AUDIO, topFrame.onAudio)
     topFrame.gt = makegamma(0.5)
-    topFrame.Bind(wx.EVT_TIMER, topFrame.OnTimer)
-    topFrame.timer = wx.Timer(topFrame)
+    topFrame.Bind(wx.EVT_TIMER, topFrame.OnTimer, id=MAIN_TIMER)
+    topFrame.timer = wx.Timer(topFrame, MAIN_TIMER)
     topFrame.a.Start()
     
     if os.path.exists(startupfn):
