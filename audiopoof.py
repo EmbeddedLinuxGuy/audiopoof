@@ -177,6 +177,9 @@ class testFrame(wx.Frame):
         self.viewer.Delete(sel)
         if sel > 0:
             self.viewer.SetSelection(sel-1)
+        else:
+            if self.viewer.GetCount() > 0:
+                self.viewer.SetSelection(0)
 
     def onToBits(self, event):
         string = ""
@@ -186,7 +189,12 @@ class testFrame(wx.Frame):
             else:
                 string += "0"
         string += "\n"
-        n = self.viewer.GetCount()
+
+        n = 1 + self.viewer.GetSelection()
+#        if n < 0:
+#            n = self.viewer.GetCount()
+
+        self.report("Insert at " + str(n))
         self.viewer.Insert(string, n)
         self.viewer.SetSelection(n)
 
@@ -341,8 +349,8 @@ class testFrame(wx.Frame):
         sizer_buttons.Add(inner_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_buttons.Add(outer_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.slider_speed = wx.Slider(self, SLIDER_SPEED, 500, 20, 500, (0,0), (100, 250), style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE|wx.EXPAND)
-        self.slider_gross = wx.Slider(self, SLIDER_SPEED, 0, 0, 4000, (0,0), (100, 250), style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE|wx.EXPAND)
+        self.slider_speed = wx.Slider(self, SLIDER_SPEED, 500, 20, 500, (0,0), (75, 250), style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE|wx.EXPAND)
+        self.slider_gross = wx.Slider(self, SLIDER_SPEED, 0, 0, 4000, (0,0), (75, 250), style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE|wx.EXPAND)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_SPEED)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_GROSS)
 
