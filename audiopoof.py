@@ -93,6 +93,12 @@ class testFrame(wx.Frame):
         self.heartBeat = wx.Timer(self, id=HEARTBEAT)
         self.Bind(wx.EVT_TIMER, self.onHeartBeat, id=HEARTBEAT)
 
+        self.toBits = wx.Button(self, -1, "Add")
+        self.Bind(wx.EVT_BUTTON, self.onToBits, self.toBits)
+
+        self.delButton = wx.Button(self, -1, "Remove")
+        self.Bind(wx.EVT_BUTTON, self.onDelete, self.delButton)
+
         # Menu Bar
         self.menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -163,6 +169,26 @@ class testFrame(wx.Frame):
         
         # end wxGlade
         
+    def onDelete(self, event):
+        sel = self.viewer.GetSelection()
+        if sel < 0:
+            return
+        self.viewer.Delete(sel)
+        if sel > 0:
+            self.viewer.SetSelection(sel-1)
+
+    def onToBits(self, event):
+        string = ""
+        for i in range(16):
+            if self.cb_feathers[i].GetValue():
+                string += "1"
+            else:
+                string += "0"
+        string += "\n"
+        n = self.viewer.GetCount()
+        self.viewer.Insert(string, n)
+        self.viewer.SetSelection(n)
+
     def __set_properties(self):
 
         self.storeFlag = 0
@@ -322,16 +348,28 @@ class testFrame(wx.Frame):
 
 
         self.crossing_label = wx.StaticText(self, -1, "0")
+        self.saveButton = wx.Button(self, -1, "Save")
+        self.Bind(wx.EVT_BUTTON, self.onSave, self.saveButton)
+        self.seqName = wx.TextCtrl(self, -1, "patternName", size=(125, -1))
 
-        sizer_toplevel = wx.FlexGridSizer(2, 9, 0, 4) # rows, cols, vgap, hgap
+        sizer_outer = wx.FlexGridSizer(2, 2, 0, 0)
+
+        sizer_left = wx.FlexGridSizer(1, 3, 0, 0)
+        sizer_left.Add(self.slider_thresh, 0, wx.EXPAND, 0)
+        sizer_left.Add(self.gauge_audio, 0, wx.ALL|wx.EXPAND, 0)
+        sizer_left.Add(self.slider_speed, 0, wx.EXPAND, 0)
+
+        edit_sizer = wx.FlexGridSizer(3, 1, 0, 0)
+        edit_sizer.Add(self.toBits)
+        edit_sizer.Add(self.saveButton)
+        edit_sizer.Add(self.seqName)
+
+        sizer_toplevel = wx.FlexGridSizer(2, 6, 0, 4) # rows, cols, vgap, hgap
 
         # TOPLEVEL first row
 
-        sizer_toplevel.Add(self.slider_thresh, 0, wx.EXPAND, 0)
-        sizer_toplevel.Add(self.gauge_audio, 0, wx.ALL|wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_modelabels, 1, wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_modecbs, 1, wx.ALL|wx.EXPAND, 0)
-        sizer_toplevel.Add(self.slider_speed, 0, wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_matrix, 1, 0, 0)
         sizer_toplevel.Add(self.lb1, 0, wx.EXPAND, 0)
         sizer_toplevel.Add(sizer_buttons, 0, wx.ALL, 0)
@@ -339,26 +377,38 @@ class testFrame(wx.Frame):
 
         # TOPLEVEL second row
 
-        sizer_toplevel.Add(self.crossing_label)
-        sizer_toplevel.Add((2,2), 0, 0, 0)
-        sizer_toplevel.Add((2,2), 0, 0, 0)
         sizer_toplevel.Add((2,2), 0, 0, 0)
         sizer_toplevel.Add((2,2), 0, 0, 0)
         sizer_toplevel.Add(next_button)
         sizer_toplevel.Add(reload_button)
         sizer_toplevel.Add((2,2), 0, 0, 0)
-        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add(self.delButton)
 
-        sizer_toplevel.Add((2,2), 0, 0, 0)
-        sizer_toplevel.Add((2,2), 0, 0, 0)
-        sizer_toplevel.Add((2,2), 0, 0, 0)
+        # TOPLEVEL third row
+
         sizer_toplevel.Add((2,2), 0, 0, 0)
         sizer_toplevel.Add((2,2), 0, 0, 0)
         sizer_toplevel.Add(cb_grid)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add(edit_sizer)
 
-        self.SetSizer(sizer_toplevel)
+        # OUTER sizer
+
+        sizer_outer.Add(sizer_left)
+        sizer_outer.Add(sizer_toplevel)
+        sizer_outer.Add(self.crossing_label)
+
+        self.SetSizer(sizer_outer)
         self.Layout()
         # end wxGlade
+
+    def onSave(self, event):
+        lines = self.viewer.GetItems()
+        filename = 'seq/' + self.seqName.GetValue()
+        with open(filename, 'w') as f:
+            f.writelines(lines)
+        self.report("Saved " + filename)
 
     def onChar(self, event):
         keycode = event.GetKeyCode()
