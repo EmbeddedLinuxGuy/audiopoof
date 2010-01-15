@@ -25,6 +25,7 @@ import AudioProc
 # 
 SLIDER_SPEED = 91
 SLIDER_THRESH = 92
+SLIDER_GROSS = 93
 
 POOFER_INDEX = 300              # for poofer buttons
 
@@ -340,8 +341,10 @@ class testFrame(wx.Frame):
         sizer_buttons.Add(inner_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_buttons.Add(outer_button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.slider_speed = wx.Slider(self, SLIDER_SPEED, 500, 50, 3000, (0,0), (100, 250), style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE|wx.EXPAND)
+        self.slider_speed = wx.Slider(self, SLIDER_SPEED, 500, 20, 500, (0,0), (100, 250), style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE|wx.EXPAND)
+        self.slider_gross = wx.Slider(self, SLIDER_SPEED, 0, 0, 4000, (0,0), (100, 250), style=wx.SL_VERTICAL|wx.SL_LABELS|wx.SL_INVERSE|wx.EXPAND)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_SPEED)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.onScroll, id=SLIDER_GROSS)
 
         reload_button = wx.Button(self, -1, "Reload")
         self.Bind(wx.EVT_BUTTON, self.onReload, reload_button)
@@ -354,9 +357,10 @@ class testFrame(wx.Frame):
 
         sizer_outer = wx.FlexGridSizer(2, 2, 0, 0)
 
-        sizer_left = wx.FlexGridSizer(1, 3, 0, 0)
+        sizer_left = wx.FlexGridSizer(1, 4, 0, 0)
         sizer_left.Add(self.slider_thresh, 0, wx.EXPAND, 0)
         sizer_left.Add(self.gauge_audio, 0, wx.ALL|wx.EXPAND, 0)
+        sizer_left.Add(self.slider_gross, 0, wx.EXPAND, 0)
         sizer_left.Add(self.slider_speed, 0, wx.EXPAND, 0)
 
         edit_sizer = wx.FlexGridSizer(3, 1, 0, 0)
@@ -420,17 +424,15 @@ class testFrame(wx.Frame):
         self.flashPooferBtn(poofer) # make this button red
 
     def onScroll(self, event):
-        slider = event.GetEventObject()
-        val = slider.GetValue()
-        if slider.GetId() == SLIDER_SPEED:
-            self.interval = val
-            self.timer.Stop()
+        val = self.slider_gross.GetValue() + self.slider_speed.GetValue()
+        self.interval = val
+        self.timer.Stop()
             #self.timer.Start(val, oneShot=True)
-            self.timer.Start(val)
-            if val > 500:
-                self.heartBeat.Start(500)
-            else:
-                self.heartBeat.Stop()
+        self.timer.Start(val)
+        if val > 500:
+            self.heartBeat.Start(500)
+        else:
+            self.heartBeat.Stop()
 
     def onReload(self, event):
         self.sampleList = os.listdir('seq')
