@@ -100,6 +100,9 @@ class testFrame(wx.Frame):
         self.delButton = wx.Button(self, -1, "Remove")
         self.Bind(wx.EVT_BUTTON, self.onDelete, self.delButton)
 
+        # start in edit mode, meaning SERIAL, STEP, and AUDIO are OFF
+        self.editMode = True
+
         # Menu Bar
         self.menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -166,6 +169,8 @@ class testFrame(wx.Frame):
 
         self.Bind(wx.EVT_CHECKBOX, self.onCheckBox, id=AUDIO_CB)
         self.Bind(wx.EVT_CHECKBOX, self.onCheckBox, id=SERIAL_CB)
+        self.Bind(wx.EVT_CHECKBOX, self.onCheckBox, id=SEQUENCE_CB)
+
         self.Bind(wx.EVT_CHECKBOX, self.onReverse, id=REVERSE_CB)
         
         # end wxGlade
@@ -434,13 +439,8 @@ class testFrame(wx.Frame):
     def onScroll(self, event):
         val = self.slider_gross.GetValue() + self.slider_speed.GetValue()
         self.interval = val
-        self.timer.Stop()
-            #self.timer.Start(val, oneShot=True)
-        self.timer.Start(val)
-        if val > 500:
-            self.heartBeat.Start(500)
-        else:
-            self.heartBeat.Stop()
+        if self.cb_sequence.GetValue():
+            self.timer.Start(val)
 
     def onReload(self, event):
         self.sampleList = os.listdir('seq')
@@ -474,7 +474,13 @@ class testFrame(wx.Frame):
     # thePoofer: 1-16
     def trigPoofer(self,thePoofer):
         self.cb_feathers[thePoofer-1].SetValue(True)
-        self.timer_feathers[thePoofer-1].Start(500)
+#        self.timer_feathers[thePoofer-1].Start(500)
+        # XXX this check is perhaps NOT REALLY NECESSARY because for EDIT
+        # mode when we DO NOT WANT the feather timeout, we use checkboxes
+        # directly and NOT the poofer... unless we want to change this so
+        # we can edit sequences with the keypresses which DO POOF
+        if not self.editMode:
+            self.timer_feathers[thePoofer-1].Start(500, oneShot=True)
 
         theBoard = 1+int((thePoofer-1)/8)
         if (thePoofer > 8):
@@ -554,20 +560,44 @@ class testFrame(wx.Frame):
         dlg.ShowModal()
         dlg.Destroy()
 
+    def doHeartBeat(self):
+        if self.cb_sequence.GetValue() or self.cb_audio.GetValue():
+            self.heartBeat.Start(500)
+        else:
+            self.heartBeat.Stop()
 
+    # AUDIO_CB, SERIAL_CB, SEQUENCE_CB
     def onCheckBox(self, event): # wxGlade: testFrame.<event_handler>
         cb = event.GetEventObject()
+        nowEditing = self.inEditMode()
+        if self.editMode:
+            if not nowEditing:
+                self.clearFeathers()
+                self.editMode = False
+                for i in range(16):
+                    self.cb_feathers[i].Disable()
+        else:
+            if nowEditing:
+                self.editMode = True
+                for i in range(16):
+                    self.cb_feathers[i].Enable()
+
         if cb.GetId() == AUDIO_CB:
             self.doAudioCB()
-        if cb.GetId() == SERIAL_CB:
-            self.report("SERIAL")
-            if self.cb_serial.GetValue():
-                self.report("START")
+            self.doHeartBeat()
+        if cb.GetId() == SEQUENCE_CB:
+            self.doHeartBeat()
+            if self.cb_sequence.GetValue():
+                self.report("START TIMER")
                 self.timer.Start(self.interval)
             else:
-                self.report("STOP")
+                self.report("STOP TIMER")
                 self.timer.Stop()
-            
+
+    def clearFeathers(self):
+        for i in range(16):
+            self.cb_feathers[i].SetValue(False)
+
     def doAudioCB(self):
         if self.cb_audio.GetValue():
             self.report("Audio input started")
@@ -604,6 +634,11 @@ class testFrame(wx.Frame):
 
     def onHeartBeat(self, event):
         self.doPoof()
+
+    # EDIT MODE means we are NOT (STEPPING, AUDIO TRIGGERING, or RUNNING)
+    def inEditMode(self):
+        return not (self.cb_sequence.GetValue() or self.cb_audio.GetValue()
+            or self.cb_serial.GetValue())
 
     def OnTimer(self, event):
         self.doPoof()
