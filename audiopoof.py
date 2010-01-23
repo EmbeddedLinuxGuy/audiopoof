@@ -156,6 +156,12 @@ class testFrame(wx.Frame):
             sc.SetFont(wx.Font(8, wx.DEFAULT, wx.NORMAL, wx.BOLD, 1, ""))
             self.pooferbtnmatrix.append(sc)
 
+        extraNames = [ "Z", "X", "M", "," ]
+        for chan in range(4):
+            sc = wx.Button(self, -1, extraNames[chan])
+            sc.Disable()
+            self.pooferbtnmatrix.append(sc)
+            
         self.defaultBtnColour = sc.GetBackgroundColour()
 
         
@@ -342,9 +348,9 @@ class testFrame(wx.Frame):
         next_button = wx.Button(self, -1, "Next")
         self.Bind(wx.EVT_BUTTON, self.onNextButton, next_button)
 
-        all_button = wx.Button(self, -1, "All")
-        inner_button = wx.Button(self, -1, "Inner")
-        outer_button = wx.Button(self, -1, "Outer")
+        all_button = wx.Button(self, -1, "All (space)")
+        inner_button = wx.Button(self, -1, "Inner (i)")
+        outer_button = wx.Button(self, -1, "Outer (o)")
         self.Bind(wx.EVT_BUTTON, self.onAllButton, all_button)
         self.Bind(wx.EVT_BUTTON, self.onInnerButton, inner_button)
         self.Bind(wx.EVT_BUTTON, self.onOuterButton, outer_button)
@@ -429,10 +435,37 @@ class testFrame(wx.Frame):
 
     def onChar(self, event):
         keycode = event.GetKeyCode()
+        #self.report(str(keycode))
+        if (keycode == 32): # space
+            for i in range(16):
+                self.trigPoofer(i+1)
+            return
+        if (keycode == 122): # z
+            for i in [13, 14, 15, 16]:
+                self.trigPoofer(i)
+            return
+        if (keycode == 120): # x
+            for i in [9, 10, 11, 12]:
+                self.trigPoofer(i)
+            return
+        if (keycode == 109): # m
+            for i in [1, 2, 3, 4]:
+                self.trigPoofer(i)
+            return
+        if (keycode == 44): # ,
+            for i in [5, 6, 7, 8]:
+                self.trigPoofer(i)
+            return
+        if (keycode == 105): # i
+            self.onInnerButton(event)
+            return
+        if (keycode == 111): # o
+            self.onOuterButton(event)
+            return
+        
         poofer = self.keyMap.get(keycode, None)
         if (poofer == None):
             return
-        #self.report(str(keycode))
         self.trigPoofer(poofer)  # send serial command to tigger this poofer
         self.flashPooferBtn(poofer) # make this button red
 
