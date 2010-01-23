@@ -103,6 +103,11 @@ class testFrame(wx.Frame):
         # start in edit mode, meaning SERIAL, STEP, and AUDIO are OFF
         self.editMode = True
 
+        self.haveFocus = False
+        self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
+        self.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+
         # Menu Bar
         self.menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -180,7 +185,23 @@ class testFrame(wx.Frame):
         self.Bind(wx.EVT_CHECKBOX, self.onReverse, id=REVERSE_CB)
         
         # end wxGlade
-        
+
+    def OnSetFocus(self, evt):
+        self.haveFocus = True
+        self.Refresh()
+
+    def OnKillFocus(self, evt):
+        self.haveFocus = False
+        self.Refresh()
+
+
+    def OnPaint(self, evt):
+        dc = wx.PaintDC(self)
+        if self.haveFocus:
+            self.focus_label.SetLabel("Type!")
+        else:
+            self.focus_label.SetLabel("Don't Type")
+
     def onDelete(self, event):
         sel = self.viewer.GetSelection()
         if sel < 0:
@@ -369,6 +390,7 @@ class testFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.onReload, reload_button)
 
 
+        self.focus_label = wx.StaticText(self, -1, "Don't Type")
         self.crossing_label = wx.StaticText(self, -1, "0")
         self.saveButton = wx.Button(self, -1, "Save")
         self.Bind(wx.EVT_BUTTON, self.onSave, self.saveButton)
@@ -400,7 +422,8 @@ class testFrame(wx.Frame):
 
         # TOPLEVEL second row
 
-        sizer_toplevel.Add((2,2), 0, 0, 0)
+#        sizer_toplevel.Add((2,2), 0, 0, 0)
+        sizer_toplevel.Add(self.focus_label)
         sizer_toplevel.Add((2,2), 0, 0, 0)
         sizer_toplevel.Add(next_button)
         sizer_toplevel.Add(reload_button)
