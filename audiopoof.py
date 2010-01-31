@@ -932,7 +932,6 @@ if __name__ == "__main__":
     if os.path.exists(startupfn):
         topFrame.setValues(topFrame.loadSettings(startupfn))
     else:
-        print "can't find startup settings file " + startupfn
         topFrame.setValues(topFrame.defaultVals())
         
     topFrame.Show()
