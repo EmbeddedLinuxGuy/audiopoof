@@ -88,7 +88,12 @@ class AudioProc():
         i = 0
         while self.keepGoing:
             i += 1
-            data =self.stream.read(chunk)
+            try:
+                data =self.stream.read(chunk)
+            except: # HO HUM!
+                self.running = False
+                time.sleep(0.01)
+                return
             if (i>2):
 #            if (i>self.skip):
                 i = 0
